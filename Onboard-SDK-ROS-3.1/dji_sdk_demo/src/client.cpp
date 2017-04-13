@@ -1,0 +1,63 @@
+
+
+#include <ros/ros.h>
+#include <stdio.h>
+
+#include <cstdlib>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include "geometry_msgs/Point.h"
+#include "std_msgs/Float64.h"
+#include "geometry_msgs/PoseArray.h"
+#include <signal.h>
+#include "pid_controler.h"
+using namespace std;
+using namespace DJI::onboardSDK;
+pid_controler* pid_c=NULL;
+
+void sighandler(int signum){
+	printf("Landing...\n");
+	pid_c->exception_landing();
+}
+
+
+
+void subscriber_distance(const geometry_msgs::PoseArray& msg){
+
+	string ss = msg.header.frame_id;
+	float read_distance=0;
+	float read_x=0;
+	float read_y=0;
+	if(ss=="image"){
+		read_distance = msg.poses[0].position.z;
+		read_x = msg.poses[0].position.x;
+		read_y = msg.poses[0].position.y;
+		ROS_INFO("Recieved distance: [%f]",read_distance);
+		pid_c->actions(2.0,read_distance,read_x,read_y);
+	}
+}
+int main(int argc, char **argv)
+{
+	int main_operate_code = 0;
+	int temp32;
+	bool valid_flag = false;
+	bool err_flag = false;
+	ros::init(argc, argv, "sdk_client");
+	ROS_INFO("sdk_service_client_test");
+	ros::NodeHandle n;
+	pid_c = new pid_controler(n,2.0,0);
+	ros::Subscriber sub = n.subscribe("/tag_detections_pose", 1,subscriber_distance);
+	signal(SIGKILL, sighandler);
+	while(ros::ok()){
+		printf("Subscribing data[distance]...\n");
+		//sleep(2);
+		ros::spinOnce();
+	}
+	return 0;
+}
+
+
+
+
+
+

@@ -1,0 +1,31 @@
+<launch>
+	<node pkg="dji_sdk" type="dji_sdk_node" name="dji_sdk" output="screen">
+		<!-- node parameters -->
+		<param name="serial_name" type="string" value="/dev/ttyTHS1"/>
+		<param name="baud_rate" type="int" value="230400"/>
+		<param name="app_id" type="int" value="1028784"/>
+		<param name="app_version" type="int" value="1"/>
+		<param name="app_bundle_id" type="string" value="Welcome to use dji-sdk"/>
+		<param name="enc_key" type="string" value="7376b44ba2b82d7c56cd815517ebb6d0529d37cd02981c89e5eb93e1a98c339b"/>
+		<param name="groundstation_enable" type="int" value="1"/>
+	</node>
+	
+    <node pkg="visp_auto_tracker" type="visp_auto_tracker" name="visp_auto_tracker" output="screen">
+    <param name="model_path" value="$(find visp_auto_tracker)/models" />
+    <param name="model_name" value="pattern" />
+    <param name="debug_display" value="True" />
+	      
+    <remap from="/visp_auto_tracker/camera_info" to="/dji_sdk/camera_info"/>
+    <remap from="/visp_auto_tracker/image_raw" to="/dji_sdk/image_raw"/>
+  </node>	
+	
+	<node pkg="dynamic_landing" type="dynamic_landing_client" name="dynamic_landing_client" output="screen">
+	</node>
+	
+		<node pkg="dji_sdk_read_cam" type="dji_sdk_read_cam" name="dji_sdk_read_cam" output="screen">
+		<!-- node parameters -->
+		<param name="gray_or_rgb" type="int" value="0"/>
+		<param name="to_mobile" type="int" value="1"/>
+	</node>
+	
+</launch>
