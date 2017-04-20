@@ -15,7 +15,8 @@ private:
    	DJIDrone* drone ;
 	float x;
 	float y;
-
+	int flag;
+	int angle;
 
 
 public:
@@ -23,6 +24,14 @@ public:
 	~pid_controler();
 	float actions(float setdistance,float actualdistance,float x,float y);
 	void exception_landing(void);
+	void flight_init(void);
+	void setflag(void);
+	void resetflag(void);
+	int getflag();
+	void gimbal_test(void);
+	int getangle();
+	void setx(float x);
+	void sety(float y);
 };
 
 #endif
