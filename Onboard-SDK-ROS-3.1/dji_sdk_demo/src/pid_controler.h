@@ -28,10 +28,12 @@ public:
 	void setflag(void);
 	void resetflag(void);
 	int getflag();
+	void setangle(int new_angle);
 	void gimbal_test(void);
 	int getangle();
 	void setx(float x);
 	void sety(float y);
+
 };
 
 #endif

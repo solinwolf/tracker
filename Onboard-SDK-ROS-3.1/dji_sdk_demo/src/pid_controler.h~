@@ -30,6 +30,9 @@ public:
 	int getflag();
 	void gimbal_test(void);
 	int getangle();
+	void setx(float x);
+	void sety(float y);
+	void setangle(int new_angle);
 };
 
 #endif

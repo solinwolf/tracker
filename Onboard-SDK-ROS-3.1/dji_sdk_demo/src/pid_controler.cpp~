@@ -6,7 +6,7 @@ pid_controler::pid_controler(ros::NodeHandle& nh,float setdistance,float actuald
 	x=0;
 	y=0;
 	flag = -1;
-	angle=0;
+	angle=-900;
 	Setdistance=setdistance; 
 	Actualdistance=actualdistance; 
 	todistance = Setdistance - Actualdistance;
@@ -18,77 +18,62 @@ pid_controler::~pid_controler(){
 	sleep(3);
 	drone->release_sdk_permission_control();
 	sleep(2);
-
-	
 	delete drone;
 }
 float pid_controler::actions(float setdistance,float actualdistance,float x,float y){ 
 	Setdistance=setdistance; 
 	Actualdistance = actualdistance;
-	todistance=Setdistance-Actualdistance; 
-	//YAW 
-	if(0>x){
-		int cout = (int)(asin(x/actualdistance)*180/3.14/1.8);
-		printf("Turning Left [%f] degrees...\n",asin(x/actualdistance)*180/3.14);
+	todistance=Actualdistance-setdistance; 
 
-		for(int i = 0; i < cout; i ++){
-		    if(i < cout-(int)(cout*0.1))
-			drone->attitude_control(0xA, 0, 0, 0, -90);
-		    else
-			drone->attitude_control(0xA, 0, 0, 0, 0);
-		    usleep(20000);
-		}
-		sleep(1);
-	}
-	else{
-		int cout = (int)(asin(x/actualdistance)*180/3.14/1.8);
-		printf("Turning Right [%f] degrees...\n",asin(x/actualdistance)*180/3.14);
-		for(int i = 0; i < cout; i ++){
-		    if(i < cout-(int)(cout*0.1))
-			drone->attitude_control(0xA, 0, 0, 0, 90);
-		    else
-			drone->attitude_control(0xA, 0, 0, 0, 0);
-		    usleep(20000);
-		}
-		sleep(1);
-	}
-		
-//	sleep(2);
-	//Too close
-	if(todistance>=0.04) {
-		// Action here
-		printf("Going back distance:%f\n",todistance);
-		//d->gimbal_angle_control(0, 0, 0, 20);
-		int cout =  (int)(todistance/0.04);
-		//printf("cout=%d\n",cout);
-		for(int i = 0; i < cout; i++)
-		{
-		    if(i < cout-(int)(cout*0.1))
-			drone->attitude_control(0x40, -2, 0, 0, 0);
-		    else
-			drone->attitude_control(0x40, 0, 0, 0, 0);
-		    usleep(20000);
-		}
-		sleep(2);
-	}
-	//Too far
-	else if(todistance<0.04){
-		todistance = -todistance;
-		printf("Going forward distance:%f\n",todistance);
-		//d->gimbal_angle_control(0, 0, 0, 20);
-		int cout =  (int)(todistance/0.04);
-		//printf("cout=%d\n",cout);
-		for(int i = 0; i < cout; i++)
-		{
-		    if(i < cout-(int)(cout*0.1))
-			drone->attitude_control(0x40, 2, 0, 0, 0);
-		    else
-			drone->attitude_control(0x40, 0, 0, 0, 0);
-		    usleep(20000);
-		}
-		sleep(2);
+	int degrees = (int)(asin(x/actualdistance)*180/3.14);
+
+
 	
+	float x_distance=0;
+	float y_distance=0;
+	//Go Forward if speed is positive
+	//Go Back if speed is negetive
+/*	if(todistance>=0.04)
+		speed = 2;
+	else if(todistance<=-0.04)
+		speed = -2;
+	int cout =  (int)(todistance/(0.02*speed)); //drone moves 0.02*speed in one loop
+	for(int i = 0; i < cout; i++)
+	{
+	    if(i < cout-(int)(cout*0.1))
+		drone->attitude_control(0x40, speed, 0, 0, 0);
+	    else
+		drone->attitude_control(0x40, 0, 0, 0, 0);
+	    usleep(20000);
 	}
+	sleep(2);
+*/
+	int x_speed = 0;
+	int y_speed = 0;
+	x_distance = (-todistance*cos(degrees));
+	y_distance = (-todistance*sin(degrees));	
+	x_speed = 2;
+	printf("x_distance = %f,y_distance = %f\n",x_distance,y_distance);
+	int step =  (int)(x_distance/(0.02*2)); //drone moves 0.02*speed in one loop
+	y_speed = y_distance/(x_distance/2);
+	printf("x_speed = %d,y_speed = %d\n",x_speed,y_speed);
+	printf("step = %d\n",step);
+	for(int i = 0; i < step; i++)
+	{
+	    if(i < step-(int)(step*0.1))
+		drone->attitude_control(0x40, x_speed, y_speed, 0, 0);
+	    else
+		drone->attitude_control(0x40, 0, 0, 0, 0);
+	    usleep(20000);
+	}
+	sleep(3);
+	//Turning Left/Right
+	if(degrees<0)
+		printf("Turning Left [%d] degrees...\n",degrees);
+	else 
+		printf("Turning Right [%d] degrees...\n",degrees);
+	drone->attitude_control(0xA, 0, 0, 0, degrees);
+	sleep(1);
 	return Actualdistance; 
 }
 void pid_controler::exception_landing(void){
@@ -110,16 +95,13 @@ void pid_controler::flight_init(void){
 }
 
 void pid_controler::gimbal_test(){
-	
-	drone->gimbal_angle_control(0, 0, 450, 20);
+	int tmp =-900;
+	drone->gimbal_angle_control(0, 0, 0, tmp);
 	sleep(2);
-	angle+=100;
-	if(angle>=1800)
-		angle=0;
-
 }
 void pid_controler::resetflag(void){
 	flag = -1;
+	angle = -900;
 }
 int pid_controler::getflag(void){
 	return flag;
@@ -129,6 +111,9 @@ void pid_controler::setflag(void){
 }
 int pid_controler::getangle(void){
 	return angle;
+}
+void pid_controler::setangle(int new_angle){
+	angle = new_angle;
 }
 void pid_controler::setx(float x){
 	this->x = x;
