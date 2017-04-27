@@ -1,8 +1,8 @@
-#ifndef __PID_CONTROLER_H
-#define __PID_CONTROLER_H
+#ifndef __controler_H
+#define __controler_H
 #include <dji_sdk/dji_drone.h>
 
-class pid_controler{
+class controler{
 private: 
 	float Setdistance;         //定义设定值
 	float Actualdistance;      //定义实际值
@@ -15,8 +15,8 @@ private:
 
 
 public:
-	pid_controler(ros::NodeHandle& nh,float setdistance,float actualdistance);
-	~pid_controler();
+	controler(ros::NodeHandle& nh,float setdistance,float actualdistance);
+	~controler();
 	float actions(float setdistance,float actualdistance,float x,float y);
 	void exception_landing(void);
 	void flight_init(void);

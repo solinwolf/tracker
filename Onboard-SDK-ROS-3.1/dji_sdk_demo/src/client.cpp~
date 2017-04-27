@@ -107,7 +107,6 @@ int main(int argc, char **argv)
 		else if(takeoff==-1){
 			printf("exception_landing\n");
 			pid_c->exception_landing();
-			exit(0);
 		}	
 	}
 	return 0;

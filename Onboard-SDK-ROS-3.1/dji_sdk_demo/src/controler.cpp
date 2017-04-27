@@ -1,10 +1,10 @@
 
 #include <stdio.h>
-#include "pid_controler.h"
+#include "controler.h"
 #include <math.h>
 #include <unistd.h>
 
-pid_controler::pid_controler(ros::NodeHandle& nh,float setdistance,float actualdistance){ 
+controler::controler(ros::NodeHandle& nh,float setdistance,float actualdistance){ 
 	x=0;
 	y=0;
 	flag = -1;
@@ -14,7 +14,7 @@ pid_controler::pid_controler(ros::NodeHandle& nh,float setdistance,float actuald
 	todistance = Setdistance - Actualdistance;
 	drone = new DJIDrone(nh);	
 }
-pid_controler::~pid_controler(){
+controler::~controler(){
 	printf("Landing..\n");
 	drone->landing();
 	sleep(3);
@@ -22,7 +22,7 @@ pid_controler::~pid_controler(){
 	sleep(2);
 	delete drone;
 }
-float pid_controler::actions(float setdistance,float actualdistance,float x,float y){ 
+float controler::actions(float setdistance,float actualdistance,float x,float y){ 
 	Setdistance=setdistance; 
 	Actualdistance = actualdistance;
 	todistance=Setdistance - Actualdistance; 
@@ -70,13 +70,13 @@ float pid_controler::actions(float setdistance,float actualdistance,float x,floa
 
 	return Actualdistance; 
 }
-void pid_controler::exception_landing(void){
+void controler::exception_landing(void){
 	drone->landing();
 	sleep(3);
 	drone->release_sdk_permission_control();
 	sleep(2);
 }
-void pid_controler::flight_init(void){
+void controler::flight_init(void){
 	printf("Requesting sdk permission...\n");
 	drone->request_sdk_permission_control();
 	sleep(3);
@@ -88,33 +88,33 @@ void pid_controler::flight_init(void){
 
 }
 
-void pid_controler::gimbal_test(){
+void controler::gimbal_test(){
 	/*drone->gimbal_angle_control(0, 0, 0, angle);
 
 	angle+=10;
 	if(angle>900)
 		angle=-900;*/
 }
-void pid_controler::resetflag(void){
+void controler::resetflag(void){
 	flag = -1;
 	angle = -900;
 }
-int pid_controler::getflag(void){
+int controler::getflag(void){
 	return flag;
 }
-void pid_controler::setflag(void){
+void controler::setflag(void){
 	flag = 1;
 }
-int pid_controler::getangle(void){
+int controler::getangle(void){
 	return angle;
 }
-void pid_controler::setangle(int new_angle){
+void controler::setangle(int new_angle){
 	angle = new_angle;
 }
-void pid_controler::setx(float x){
+void controler::setx(float x){
 	this->x = x;
 }
-void pid_controler::sety(float y){
+void controler::sety(float y){
 	this->y = y;
 }
 
