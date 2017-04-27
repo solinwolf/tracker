@@ -13,14 +13,15 @@
 #include "geometry_msgs/Point.h"
 #include <signal.h>
 #include "pid_controler.h"
-
+#include <stdlib.h>
+//#include <dji_sdk/dji_drone.h>
 #define detected 1
 #define notdetected -1
-
+int takeoff=0;
 using namespace std;
 using namespace DJI::onboardSDK;
 pid_controler* pid_c=NULL;
-static float setdistance=2.0;
+static float setdistance=1.5;
 static float actualdistance=0;
 static float read_distance=0;
 static float read_x=0;
@@ -43,12 +44,34 @@ void subscriber_distance(const geometry_msgs::PoseArray::ConstPtr& msg){
 	if(msg->poses.size()>0){
 		pose = msg->poses.front();
 		printf("Received distance:%f\n",pose.position.z);
+		update_pose();
 		pid_c->setflag();
 	}
 	else{
 		printf("Tag Not Found !\n");
 		pid_c->resetflag();
 	}
+}
+
+void get_data_from_mobile_callback(dji_sdk::TransparentTransmissionData data)
+{
+    printf("size of data = %d\n",data.data.size());
+    if(data.data.size()>0){
+	if(data.data[0]==67 && data.data[1]==100){
+		//takeoff
+		takeoff=1;
+		pid_c->flight_init();
+		printf("Taking off\n");
+	}
+	else if(data.data[0]==67 && data.data[1]==101){
+		//Landing
+		takeoff=-1;
+		printf("Landing\n");
+	}
+	
+    }
+	
+
 }
 int main(int argc, char **argv)
 {
@@ -59,26 +82,32 @@ int main(int argc, char **argv)
 	ROS_INFO("sdk_client_test");
 	ros::NodeHandle n;
 	pid_c = new pid_controler(n,setdistance,actualdistance);
-	pid_c->flight_init();
+	
 	ros::Subscriber sub = n.subscribe("tag_detections_pose", 1,subscriber_distance);
+	ros::Subscriber mobile_data_subscriber = n.subscribe<dji_sdk::TransparentTransmissionData>("dji_sdk/data_received_from_remote_device",2,get_data_from_mobile_callback);
 	signal(SIGKILL, sighandler);
 	signal(SIGQUIT, sighandler);
 	signal(SIGINT, sighandler);
 	signal(SIGTERM, sighandler);
 	signal(SIGHUP, sighandler);
-/*	signal(SIGSEGV,sighandler);*/
+	signal(SIGSEGV,sighandler);
 	while(ros::ok()){
 		ros::spinOnce();
-		
-		//printf("Getting data...\n");
-		if(pid_c->getflag()==notdetected){
-			printf("Gimbal testing...\n");
-			pid_c->gimbal_test();
-		}
-		else if(pid_c->getflag()==detected){
-			update_pose();
-			pid_c->actions(setdistance ,read_distance,read_x,read_y);
+		if(takeoff==1){
+			if(pid_c->getflag()==notdetected){
+				printf("Gimbal testing...\n");
+				pid_c->gimbal_test();
+			}
+			else if(pid_c->getflag()==detected){
+			
+				pid_c->actions(setdistance ,read_distance,read_x,read_y);
 				
+			}
+		}
+		else if(takeoff==-1){
+			printf("exception_landing\n");
+			pid_c->exception_landing();
+			exit(0);
 		}	
 	}
 	return 0;

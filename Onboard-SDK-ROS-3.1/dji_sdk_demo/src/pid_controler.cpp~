@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "pid_controler.h"
 #include <math.h>
+#include <unistd.h>
+
 pid_controler::pid_controler(ros::NodeHandle& nh,float setdistance,float actualdistance){ 
 	x=0;
 	y=0;
@@ -23,57 +25,49 @@ pid_controler::~pid_controler(){
 float pid_controler::actions(float setdistance,float actualdistance,float x,float y){ 
 	Setdistance=setdistance; 
 	Actualdistance = actualdistance;
-	todistance=Actualdistance-setdistance; 
+	todistance=Setdistance - Actualdistance; 
 
-	int degrees = (int)(asin(x/actualdistance)*180/3.14);
-
+	int degrees = (int)(asin(x/Actualdistance)*180/3.14);
+	int speed=0;
 
 	
-	float x_distance=0;
-	float y_distance=0;
-	//Go Forward if speed is positive
-	//Go Back if speed is negetive
-/*	if(todistance>=0.04)
-		speed = 2;
-	else if(todistance<=-0.04)
-		speed = -2;
-	int cout =  (int)(todistance/(0.02*speed)); //drone moves 0.02*speed in one loop
-	for(int i = 0; i < cout; i++)
-	{
-	    if(i < cout-(int)(cout*0.1))
-		drone->attitude_control(0x40, speed, 0, 0, 0);
-	    else
-		drone->attitude_control(0x40, 0, 0, 0, 0);
-	    usleep(20000);
-	}
-	sleep(2);
-*/
-	int x_speed = 0;
-	int y_speed = 0;
-	x_distance = (-todistance*cos(degrees));
-	y_distance = (-todistance*sin(degrees));	
-	x_speed = 2;
-	printf("x_distance = %f,y_distance = %f\n",x_distance,y_distance);
-	int step =  (int)(x_distance/(0.02*2)); //drone moves 0.02*speed in one loop
-	y_speed = y_distance/(x_distance/2);
-	printf("x_speed = %d,y_speed = %d\n",x_speed,y_speed);
-	printf("step = %d\n",step);
-	for(int i = 0; i < step; i++)
-	{
-	    if(i < step-(int)(step*0.1))
-		drone->attitude_control(0x40, x_speed, y_speed, 0, 0);
-	    else
-		drone->attitude_control(0x40, 0, 0, 0, 0);
-	    usleep(20000);
-	}
-	sleep(3);
 	//Turning Left/Right
 	if(degrees<0)
 		printf("Turning Left [%d] degrees...\n",degrees);
 	else 
 		printf("Turning Right [%d] degrees...\n",degrees);
 	drone->attitude_control(0xA, 0, 0, 0, degrees);
-	sleep(1);
+	sleep(3);
+	//Go Forward if speed is positive
+	//Go Back if speed is negetive
+	if(todistance>=0.1){
+		printf("Going Back %f m\n",todistance);
+		int cout =  (int)(todistance/0.04); //drone moves 0.02*speed in one loop
+		for(int i = 0; i < cout; i++)
+		{
+		    if(i < cout-(int)(cout*0.7))
+			drone->attitude_control(0x4a, -2, 0, 0, 0);
+		    else
+			drone->attitude_control(0x4a, 0, 0, 0, 0);
+		    usleep(20000);
+		}
+		//sleep(2);
+	}	
+	else if(todistance<=-0.1){
+		printf("Going Forward %f m\n",-todistance);
+		int cout =  (int)(-todistance/0.04); //drone moves 0.02*speed in one loop
+		for(int i = 0; i < cout; i++)
+		{
+		    if(i < cout-(int)(cout*0.7))
+			drone->attitude_control(0x4a, 2, 0, 0, 0);
+		    else
+			drone->attitude_control(0x4a, 0, 0, 0, 0);
+		    usleep(20000);
+		}
+		//sleep(2);
+	}
+
+
 	return Actualdistance; 
 }
 void pid_controler::exception_landing(void){
@@ -89,15 +83,17 @@ void pid_controler::flight_init(void){
 	printf("Taking off...\n");
 	drone->takeoff();
 	sleep(4);
-	drone->gimbal_angle_control(0, 0, 0, 20);
+	drone->gimbal_angle_control(0, 300, 0, 20);
 	sleep(1);
 
 }
 
 void pid_controler::gimbal_test(){
-	int tmp =-900;
-	drone->gimbal_angle_control(0, 0, 0, tmp);
-	sleep(2);
+	/*drone->gimbal_angle_control(0, 0, 0, angle);
+
+	angle+=10;
+	if(angle>900)
+		angle=-900;*/
 }
 void pid_controler::resetflag(void){
 	flag = -1;
